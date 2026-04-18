@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NearFind — Find it. Walk in. Done.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--ink:#0f0e0c;--paper:#f5f2eb;--accent:#e8440a;--accent2:#f5a623;--muted:#7a7568;--border:rgba(15,14,12,0.12);--card:#ffffff}
+  html{scroll-behavior:smooth}
+  body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:rgba(245,242,235,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
+  .logo span{color:var(--accent)}
+  .nav-r{display:flex;gap:10px;align-items:center}
+  .nav-ghost{font-size:13px;font-weight:500;color:var(--muted);background:transparent;border:1px solid var(--border);padding:8px 16px;border-radius:6px;cursor:pointer;text-decoration:none;transition:all .2s}
+  .nav-ghost:hover{color:var(--ink);border-color:var(--ink)}
+  .nav-cta{font-size:13px;font-weight:500;color:var(--paper);background:var(--ink);border:none;padding:9px 20px;border-radius:6px;cursor:pointer;text-decoration:none;transition:background .2s}
+  .nav-cta:hover{background:var(--accent)}
+
+  /* HERO */
+  .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 80px;text-align:center;z-index:1}
+  .hero-circle{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(232,68,10,.08) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+  .hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--paper);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:999px;margin-bottom:32px;opacity:0;animation:fadeUp .6s ease forwards .1s}
+  .hero-tag::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+  h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(48px,8vw,96px);line-height:.95;letter-spacing:-3px;color:var(--ink);max-width:900px;opacity:0;animation:fadeUp .7s ease forwards .2s}
+  h1 .ac{color:var(--accent)}
+  .hero-sub{margin-top:28px;font-size:clamp(16px,2.5vw,20px);font-weight:300;color:var(--muted);max-width:520px;line-height:1.6;opacity:0;animation:fadeUp .7s ease forwards .35s}
+
+  /* EMAIL FORM */
+  .form-wrap{margin-top:44px;opacity:0;animation:fadeUp .7s ease forwards .5s;width:100%;max-width:480px}
+  .form-wrap.static{opacity:1;animation:none;margin:0 auto}
+  .form-inner{display:flex;background:var(--card);border:1.5px solid var(--ink);border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 var(--ink);transition:box-shadow .2s,transform .2s}
+  .form-inner:focus-within{box-shadow:6px 6px 0 var(--accent);transform:translate(-1px,-1px)}
+  .email-input{flex:1;padding:16px 20px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--ink);background:transparent;border:none;outline:none}
+  .email-input::placeholder{color:#aaa}
+  .sub-btn{padding:16px 24px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--paper);background:var(--ink);border:none;cursor:pointer;letter-spacing:.02em;transition:background .2s;white-space:nowrap}
+  .sub-btn:hover{background:var(--accent)}
+  .form-note{margin-top:12px;font-size:12px;color:var(--muted);text-align:center}
+  .ok-msg{display:none;align-items:center;gap:10px;background:#EAF3DE;border:1.5px solid #1D9E75;border-radius:10px;padding:16px 20px;font-size:14px;color:#085041;font-weight:500;box-shadow:4px 4px 0 #1D9E75}
+  .ok-msg.show{display:flex}
+
+  /* CITY STRIP */
+  .city-strip{position:relative;z-index:1;background:var(--accent);padding:18px 0;overflow:hidden}
+  .city-track{display:flex;gap:40px;animation:marquee 32s linear infinite;white-space:nowrap;width:max-content}
+  .city-strip span{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--paper);opacity:.9}
+  .city-strip span.dot{opacity:.4;font-size:8px}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* PROBLEM */
+  .problem-section{position:relative;z-index:1;background:var(--ink);color:var(--paper);padding:100px 24px}
+  .prob-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+  .prob-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);margin-bottom:16px}
+  .prob-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,4vw,44px);letter-spacing:-2px;line-height:1.05;margin-bottom:24px}
+  .prob-desc{font-size:16px;color:rgba(245,242,235,.65);line-height:1.7;font-weight:300}
+  .stat-items{display:flex;flex-direction:column;gap:20px}
+  .stat-item{background:rgba(245,242,235,.06);border:1px solid rgba(245,242,235,.1);border-radius:12px;padding:24px 28px;display:flex;align-items:center;gap:20px}
+  .stat-big{font-family:'Syne',sans-serif;font-weight:800;font-size:40px;letter-spacing:-2px;color:var(--accent2);flex-shrink:0;min-width:80px}
+  .stat-text{font-size:14px;color:rgba(245,242,235,.7);line-height:1.5;font-weight:300}
+
+  /* SECTIONS */
+  .section{position:relative;z-index:1;padding:100px 24px;max-width:1100px;margin:0 auto}
+  .sec-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+  .sec-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(32px,5vw,52px);letter-spacing:-2px;line-height:1;color:var(--ink);margin-bottom:56px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+  .step{background:var(--card);border:1.5px solid var(--ink);padding:36px 32px;transition:transform .2s,box-shadow .2s}
+  .step:first-child{border-radius:12px 0 0 12px}
+  .step:last-child{border-radius:0 12px 12px 0}
+  .step:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(15,14,12,.1);z-index:2}
+  .step-num{font-family:'Syne',sans-serif;font-size:64px;font-weight:800;color:rgba(15,14,12,.06);line-height:1;margin-bottom:16px;letter-spacing:-3px}
+  .step-icon{font-size:28px;margin-bottom:14px;display:block}
+  .step h3{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.5px;color:var(--ink);margin-bottom:10px}
+  .step p{font-size:14px;color:var(--muted);line-height:1.7;font-weight:300}
+  .audience-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .aud-card{background:var(--card);border:1.5px solid var(--ink);border-radius:12px;padding:28px;box-shadow:3px 3px 0 var(--border);transition:transform .2s,box-shadow .2s}
+  .aud-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+  .aud-icon{font-size:32px;margin-bottom:14px;display:block}
+  .aud-card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.5px;margin-bottom:8px}
+  .aud-card p{font-size:13.5px;color:var(--muted);line-height:1.65;font-weight:300}
+
+  /* ── FEEDBACK SECTION ── */
+  .fb-section{position:relative;z-index:1;background:var(--ink);padding:100px 24px}
+  .fb-inner{max-width:660px;margin:0 auto;text-align:center}
+  .fb-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(30px,5vw,48px);letter-spacing:-2px;color:var(--paper);line-height:1.05;margin-bottom:12px}
+  .fb-sub{font-size:16px;color:rgba(245,242,235,.5);font-weight:300;line-height:1.6;margin-bottom:44px}
+
+  /* rating */
+  .rating-row{display:flex;justify-content:center;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+  .r-btn{width:54px;height:54px;border-radius:12px;border:1.5px solid rgba(245,242,235,.14);background:rgba(245,242,235,.05);color:var(--paper);font-size:24px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+  .r-btn:hover,.r-btn.on{background:var(--accent);border-color:var(--accent);transform:scale(1.12)}
+  .r-hint{font-size:12px;color:rgba(245,242,235,.3);margin-bottom:32px}
+
+  /* fields */
+  .fb-field{width:100%;padding:14px 18px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--paper);background:rgba(245,242,235,.07);border:1.5px solid rgba(245,242,235,.14);border-radius:10px;outline:none;margin-bottom:14px;transition:border .2s;resize:none}
+  .fb-field::placeholder{color:rgba(245,242,235,.3)}
+  .fb-field:focus{border-color:rgba(245,242,235,.4)}
+  .fb-field option{background:#1a1916;color:#fff}
+  .fb-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .fb-2col .fb-field{margin-bottom:0}
+  .char-hint{font-size:11px;color:rgba(245,242,235,.28);text-align:right;margin-top:-10px;margin-bottom:14px}
+
+  .fb-submit{width:100%;padding:16px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--ink);background:var(--paper);border:none;border-radius:10px;cursor:pointer;letter-spacing:.02em;transition:background .2s;margin-top:4px}
+  .fb-submit:hover{background:var(--accent2)}
+  .fb-submit:disabled{opacity:.5;cursor:not-allowed}
+
+  .fb-ok{display:none;align-items:center;justify-content:center;gap:12px;background:rgba(29,158,117,.15);border:1.5px solid #1D9E75;border-radius:12px;padding:22px;font-size:15px;color:#5DCAA5;font-weight:500}
+  .fb-ok.show{display:flex}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(15,14,12,.2);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+
+  /* BOTTOM CTA */
+  .btm-cta{position:relative;z-index:1;padding:120px 24px;text-align:center}
+  .btm-cta h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(36px,6vw,72px);letter-spacing:-3px;line-height:.95;margin-bottom:20px;color:var(--ink)}
+  .btm-cta>p{font-size:17px;color:var(--muted);margin-bottom:44px;font-weight:300}
+
+  footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:24px 48px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .divider{border:none;border-top:1px solid var(--border);max-width:1100px;margin:0 auto}
+
+  /* FLOATING BUBBLE */
+  .fb-bubble{position:fixed;bottom:28px;right:28px;z-index:200;width:52px;height:52px;border-radius:50%;background:var(--ink);border:none;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:transform .2s,background .2s}
+  .fb-bubble:hover{background:var(--accent);transform:scale(1.08)}
+  .fb-tip{position:fixed;bottom:90px;right:28px;z-index:200;background:var(--ink);color:var(--paper);font-size:12px;font-weight:500;padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(4px);transition:all .2s}
+  .fb-bubble:hover+.fb-tip{opacity:1;transform:translateY(0)}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  @media(max-width:768px){
+    nav{padding:16px 20px}
+    .nav-ghost{display:none}
+    .steps{grid-template-columns:1fr;gap:12px}
+    .step{border-radius:12px!important}
+    .prob-inner{grid-template-columns:1fr;gap:48px}
+    .audience-grid{grid-template-columns:1fr}
+    .fb-2col{grid-template-columns:1fr}
+    footer{flex-direction:column;gap:8px;text-align:center}
+    .section{padding:72px 20px}
+    .form-inner{flex-direction:column}
+    .sub-btn{border-radius:0 0 8px 8px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo">Near<span>Find</span></a>
+  <div class="nav-r">
+    <a href="#feedback" class="nav-ghost">Give Feedback</a>
+    <a href="#join" class="nav-cta">Join Waitlist</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-circle"></div>
+  <div class="hero-tag">Coming soon to Tier 2 &amp; 3 India</div>
+  <h1>Stop wandering.<br><span class="ac">Find it nearby.</span><span style="display:block">Walk in.</span></h1>
+  <p class="hero-sub">Search for any product. Nearby shops instantly reply if they have it. You walk in and buy. No delivery. No waiting. No wasted trips.</p>
+  <div class="form-wrap" id="join">
+    <div class="form-inner" id="fb1">
+      <input type="email" class="email-input" id="ei1" placeholder="Enter your email address" autocomplete="email"/>
+      <button class="sub-btn" onclick="submitWaitlist('ei1','fb1','ok1','n1')">Notify Me →</button>
+    </div>
+    <div class="ok-msg" id="ok1"><span style="font-size:20px">🎉</span> You're on the list! We'll notify you when NearFind launches in your city.</div>
+    <p class="form-note" id="n1">No spam. Just one email when we launch near you.</p>
+  </div>
+</section>
+
+<!-- CITY STRIP -->
+<div class="city-strip"><div class="city-track" id="cityTrack"></div></div>
+
+<!-- PROBLEM -->
+<div class="problem-section">
+  <div class="prob-inner">
+    <div>
+      <div class="prob-label">The problem</div>
+      <h2 class="prob-title">You know the shop is nearby.<br>You just don't know which one.</h2>
+      <p class="prob-desc">Every day, millions of people in Indian cities waste 30–60 minutes visiting 3 to 5 shops for a single item — only to come home empty-handed.</p>
+    </div>
+    <div class="stat-items">
+      <div class="stat-item"><div class="stat-big">3–5</div><div class="stat-text">shops visited per search trip in Tier 2/3 cities on average</div></div>
+      <div class="stat-item"><div class="stat-big">88%</div><div class="stat-text">of shopping in smaller cities still happens offline at local shops</div></div>
+      <div class="stat-item"><div class="stat-big">0</div><div class="stat-text">apps today that tell you which nearby shop has your product right now</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="sec-label">How it works</div>
+  <div class="sec-title">Three steps.<br>That's it.</div>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><span class="step-icon">🔍</span><h3>Search your product</h3><p>Type what you need — a phone charger, medicine, auto spare, clothing. In your language.</p></div>
+    <div class="step"><div class="step-num">02</div><span class="step-icon">🏪</span><h3>Shops reply instantly</h3><p>Nearby registered shops get notified and reply if they have the item, with price and distance.</p></div>
+    <div class="step"><div class="step-num">03</div><span class="step-icon">🚶</span><h3>Walk in and buy</h3><p>You see which shops have it. Pick the closest one. Walk in. Done. No delivery, no waiting.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- WHO IT'S FOR -->
+<section class="section" style="padding-top:80px">
+  <div class="sec-label">Who it's for</div>
+  <div class="sec-title">Built for<br>everyday India.</div>
+  <div class="audience-grid">
+    <div class="aud-card"><span class="aud-icon">👩‍🍳</span><h3>Homemakers</h3><p>Stop making multiple trips for a single item. Find what you need in the nearest shop before stepping out.</p></div>
+    <div class="aud-card"><span class="aud-icon">🔧</span><h3>Need it urgent</h3><p>Broken charger. Specific medicine. Car spare part. When you need it now, not in 2 days.</p></div>
+    <div class="aud-card"><span class="aud-icon">🏪</span><h3>Local shopkeepers</h3><p>Get walk-in customers who already know you have what they need. No delivery, no commission cuts.</p></div>
+    <div class="aud-card"><span class="aud-icon">🎓</span><h3>Students &amp; young professionals</h3><p>Find anything near your hostel, PG, or office in seconds. In Hindi, Telugu, Tamil — your language.</p></div>
+  </div>
+</section>
+
+<!-- ── FEEDBACK SECTION ── -->
+<div class="fb-section" id="feedback">
+  <div class="fb-inner">
+    <div class="prob-label" style="text-align:center">Your opinion matters</div>
+    <h2 class="fb-title">Not convinced?<br>Tell us why.</h2>
+    <p class="fb-sub">We're still building this. Your honest feedback — good or bad — helps us build something that actually works for you.</p>
+
+    <div class="rating-row" id="ratingRow">
+      <button class="r-btn" data-v="1" title="Terrible"  onclick="pickRating(this)">😤</button>
+      <button class="r-btn" data-v="2" title="Not useful" onclick="pickRating(this)">😕</button>
+      <button class="r-btn" data-v="3" title="It's okay"  onclick="pickRating(this)">😐</button>
+      <button class="r-btn" data-v="4" title="I like it"  onclick="pickRating(this)">😊</button>
+      <button class="r-btn" data-v="5" title="Love it!"   onclick="pickRating(this)">🤩</button>
+    </div>
+    <p class="r-hint">Tap an emoji to rate the idea</p>
+
+    <div id="fbFormWrap">
+      <div class="fb-2col">
+        <input  type="text"  class="fb-field" id="fbName"     placeholder="Your name (optional)"  maxlength="60"/>
+        <input  type="email" class="fb-field" id="fbMail"     placeholder="Email (optional)"/>
+      </div>
+      <select class="fb-field" id="fbCat" style="cursor:pointer">
+        <option value="" disabled selected>What is your feedback about?</option>
+        <option value="idea">The idea itself</option>
+        <option value="feature">A feature I need is missing</option>
+        <option value="trust">I don't trust shops to respond in time</option>
+        <option value="exists">Something like this already exists</option>
+        <option value="works">The app should work differently</option>
+        <option value="city">My city isn't listed</option>
+        <option value="other">Something else</option>
+      </select>
+      <textarea class="fb-field" id="fbMsg" rows="4" maxlength="500"
+        placeholder="Tell us more — what would make NearFind actually useful for you?"
+        oninput="document.getElementById('cc').textContent=this.value.length"></textarea>
+      <p class="char-hint"><span id="cc">0</span> / 500</p>
+      <button class="fb-submit" id="fbBtn" onclick="submitFeedback()">Send Feedback →</button>
+    </div>
+    <div class="fb-ok" id="fbOk"><span style="font-size:24px">🙏</span> Thank you! Your feedback is saved. We'll use it to build something better.</div>
+  </div>
+</div>
+
+<!-- BOTTOM CTA -->
+<section class="btm-cta">
+  <h2>Be the first<br>to know.</h2>
+  <p>We're launching city by city. Join the waitlist and we'll tell you the moment NearFind is live near you.</p>
+  <div class="form-wrap static">
+    <div class="form-inner" id="fb2">
+      <input type="email" class="email-input" id="ei2" placeholder="Your email address" autocomplete="email"/>
+      <button class="sub-btn" onclick="submitWaitlist('ei2','fb2','ok2','n2')">Join Waitlist →</button>
+    </div>
+    <div class="ok-msg" id="ok2"><span style="font-size:20px">🎉</span> You're on the list! We'll notify you when we launch near you.</div>
+    <p class="form-note" id="n2">No spam. Just one email when we launch.</p>
+  </div>
+</section>
+
+<footer>
+  <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--ink)">Near<span style="color:var(--accent)">Find</span></span>
+  <span>© 2025 NearFind · Built for Bharat</span>
+  <a href="#feedback" style="color:var(--muted);text-decoration:none">Give feedback</a>
+</footer>
+
+<button class="fb-bubble" onclick="document.getElementById('feedback').scrollIntoView({behavior:'smooth'})">💬</button>
+<div class="fb-tip">Give feedback</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STEP 1 — Paste your Google Apps Script Web App URLs below
+//  (leave as-is for now; emails still save to localStorage)
+// ═══════════════════════════════════════════════════════════════
+const WAITLIST_URL = ' https://docs.google.com/spreadsheets/d/10iuX-gGNFPgZNqZnGNwadwQIDn9qRIv38PsTPn-qZeg/edit?gid=0#gid=0';
+const FEEDBACK_URL = 'https://docs.google.com/spreadsheets/d/1qJF2MscoXMcuut40RBew7lcRGR6-XEmU2NpdxaMkAuA/edit?gid=0#gid=0';
+
+// ── City strip ────────────────────────────────────────────────
+const CITIES = [
+  'Andhra Pradesh','Telangana','Hyderabad','Vijayawada','Visakhapatnam',
+  'Warangal','Tirupati','Guntur','Karimnagar','Kurnool','Nashik','Indore',
+  'Coimbatore','Bhopal','Rajkot','Vadodara','Agra','Ludhiana','Surat',
+  'Madurai','Nagpur','Patna','Jaipur','Dehradun','Kochi'
+];
+const track = document.getElementById('cityTrack');
+[...CITIES,...CITIES].forEach((c,i)=>{
+  const s=document.createElement('span'); s.textContent=c; track.appendChild(s);
+  if(i<CITIES.length*2-1){const d=document.createElement('span');d.className='dot';d.textContent='●';track.appendChild(d);}
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const toSheet  = (url, data) => {
+  if (!url || url.includes('PASTE_')) return;
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
+};
+
+// ── Waitlist ──────────────────────────────────────────────────
+function getList(){ return JSON.parse(localStorage.getItem('nearfind_emails')||'[]'); }
+function saveList(e){ const l=getList(); if(l.find(x=>x.email===e.email)) return; l.push(e); localStorage.setItem('nearfind_emails',JSON.stringify(l)); }
+
+function submitWaitlist(inputId, boxId, okId, noteId){
+  const input = document.getElementById(inputId);
+  const val   = input.value.trim();
+  if(!isEmail(val)){
+    input.style.outline='2px solid #e8440a'; input.focus();
+    setTimeout(()=>input.style.outline='',1600);
+    return;
+  }
+  const entry = {email:val, time:new Date().toISOString(), source:'Waitlist'};
+  saveList(entry);
+  toSheet(WAITLIST_URL, entry);
+  document.getElementById(boxId).style.display='none';
+  document.getElementById(okId).classList.add('show');
+  const n=document.getElementById(noteId); if(n) n.style.display='none';
+}
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return;
+  if(document.activeElement.id==='ei1') submitWaitlist('ei1','fb1','ok1','n1');
+  if(document.activeElement.id==='ei2') submitWaitlist('ei2','fb2','ok2','n2');
+});
+
+// ── Feedback ──────────────────────────────────────────────────
+let rating = 0;
+function pickRating(btn){
+  rating = parseInt(btn.dataset.v);
+  document.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function getFeedbackList(){ return JSON.parse(localStorage.getItem('nearfind_feedback')||'[]'); }
+
+function submitFeedback(){
+  const msg = document.getElementById('fbMsg').value.trim();
+  if(!rating && !msg){
+    document.getElementById('fbMsg').style.borderColor='rgba(232,68,10,.7)';
+    document.getElementById('fbMsg').focus();
+    setTimeout(()=>document.getElementById('fbMsg').style.borderColor='',1800);
+    return;
+  }
+  const btn = document.getElementById('fbBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Sending…';
+
+  const entry = {
+    rating,
+    name     : document.getElementById('fbName').value.trim(),
+    email    : document.getElementById('fbMail').value.trim(),
+    category : document.getElementById('fbCat').value,
+    message  : msg,
+    time     : new Date().toISOString(),
+    source   : 'Feedback Form'
+  };
+
+  const list = getFeedbackList(); list.push(entry);
+  localStorage.setItem('nearfind_feedback', JSON.stringify(list));
+  toSheet(FEEDBACK_URL, entry);
+
+  setTimeout(()=>{
+    document.getElementById('fbFormWrap').style.display='none';
+    document.getElementById('fbOk').classList.add('show');
+  }, 700);
+}
+</script>
+</body>
+</html>

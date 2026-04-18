@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NearFind Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--ink:#0f0e0c;--paper:#f5f2eb;--accent:#e8440a;--accent2:#f5a623;--green:#1D9E75;--green-bg:#EAF3DE;--muted:#7a7568;--border:rgba(15,14,12,.1);--card:#ffffff;--bg:#f0ede6}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+  /* ── LOGIN ── */
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ink)}
+  .login-card{background:var(--paper);border-radius:16px;padding:48px 40px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.4)}
+  .llogo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:6px}
+  .llogo span{color:var(--accent)}
+  .lsub{font-size:13px;color:var(--muted);margin-bottom:32px}
+  .llabel{display:block;font-size:11px;font-weight:500;color:var(--muted);text-align:left;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase}
+  .linput{width:100%;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--ink);background:var(--card);border:1.5px solid var(--border);border-radius:8px;outline:none;margin-bottom:16px;transition:border .2s}
+  .linput:focus{border-color:var(--accent)}
+  .lbtn{width:100%;padding:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--paper);background:var(--ink);border:none;border-radius:8px;cursor:pointer;transition:background .2s}
+  .lbtn:hover{background:var(--accent)}
+  .lerr{font-size:12px;color:var(--accent);margin-top:10px;min-height:16px}
+  .lpill{display:inline-block;margin-top:18px;font-size:11px;color:var(--muted)}
+  .lpill code{font-family:'DM Mono',monospace;background:#eee;padding:2px 6px;border-radius:4px}
+
+  /* ── DASHBOARD ── */
+  #dash{display:none;min-height:100vh}
+  header{background:var(--ink);color:var(--paper);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .hlogo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px}
+  .hlogo span{color:var(--accent)}
+  .hright{display:flex;align-items:center;gap:14px}
+  .hbadge{font-size:11px;background:rgba(255,255,255,.1);border-radius:999px;padding:4px 12px;color:rgba(255,255,255,.65)}
+  .hout{font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif}
+  .hout:hover{color:var(--accent)}
+
+  .main{padding:32px;max-width:1100px;margin:0 auto}
+
+  /* TABS */
+  .tabs{display:flex;gap:4px;margin-bottom:28px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content}
+  .tab{padding:9px 22px;font-size:13px;font-weight:500;border:none;border-radius:7px;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s;font-family:'DM Sans',sans-serif}
+  .tab.active{background:var(--ink);color:var(--paper)}
+
+  /* STAT CARDS */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+  .sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px}
+  .sc-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+  .sc-val{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;letter-spacing:-2px;color:var(--ink)}
+  .sc-val.green{color:var(--green)}
+  .sc-val.orange{color:var(--accent)}
+  .sc-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .toolbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.5px}
+  .toolbar-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .srch{padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--border);border-radius:7px;outline:none;width:190px;transition:border .2s}
+  .srch:focus{border-color:var(--accent)}
+  .tbtn{padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--ink);transition:all .15s}
+  .tbtn:hover{background:var(--ink);color:var(--paper)}
+  .tbtn.red:hover{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+
+  /* TABLE */
+  .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  thead{background:var(--ink)}
+  thead th{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:rgba(245,242,235,.55);text-align:left;padding:13px 18px;letter-spacing:.07em;text-transform:uppercase}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:#faf8f3}
+  tbody td{padding:13px 18px;font-size:13px;color:var(--ink);vertical-align:middle}
+  .mono{font-family:'DM Mono',monospace;font-size:12.5px}
+  .tdim{font-size:12px;color:var(--muted)}
+  .delbtn{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:3px 7px;border-radius:4px;transition:all .15s}
+  .delbtn:hover{color:var(--accent);background:#fef0eb}
+
+  /* RATING STARS */
+  .stars{font-size:14px;letter-spacing:1px}
+
+  /* PILL BADGE */
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;font-weight:500}
+  .pill-green{background:var(--green-bg);color:#085041}
+  .pill-amber{background:#FAEEDA;color:#633806}
+  .pill-blue{background:#E6F1FB;color:#185FA5}
+  .pill-red{background:#FCEBEB;color:#A32D2D}
+  .pill-gray{background:#eee;color:#555}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:60px 24px;display:none}
+  .empty-icon{font-size:44px;margin-bottom:14px;display:block}
+  .empty h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px}
+  .empty p{font-size:13px;color:var(--muted)}
+
+  /* ADD MANUAL */
+  .add-bar{background:var(--green-bg);border:1px solid var(--green);border-radius:10px;padding:16px 20px;margin-bottom:16px;display:none;align-items:center;gap:10px;flex-wrap:wrap}
+  .add-bar.open{display:flex}
+  .add-bar input{flex:1;min-width:180px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--green);border-radius:7px;outline:none}
+  .add-bar button{padding:9px 18px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;border-radius:7px;cursor:pointer}
+  .add-bar .go{background:var(--green);color:#fff}
+  .add-bar .cancel{background:transparent;color:var(--green);border:1px solid var(--green)}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--paper);font-size:13px;font-weight:500;padding:11px 18px;border-radius:8px;z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+
+  /* PANEL */
+  .panel{display:none}
+  .panel.active{display:block}
+
+  @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.main{padding:20px 16px}.srch{width:100%}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="llogo">Near<span>Find</span></div>
+    <div class="lsub">Admin Portal</div>
+    <label class="llabel" for="pw">Password</label>
+    <input type="password" class="linput" id="pw" placeholder="Enter admin password"/>
+    <button class="lbtn" onclick="tryLogin()">Sign In →</button>
+    <div class="lerr" id="lerr"></div>
+    <div class="lpill">Default password: <code>nearfind2025</code></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash">
+  <header>
+    <div class="hlogo">Near<span>Find</span> <span style="font-family:'DM Sans',sans-serif;font-weight:300;font-size:13px;opacity:.4;margin-left:4px">Admin</span></div>
+    <div class="hright">
+      <span class="hbadge" id="hbadge">0 signups</span>
+      <button class="hout" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="sc"><div class="sc-label">Total signups</div><div class="sc-val green" id="sTot">0</div><div class="sc-sub">All time</div></div>
+      <div class="sc"><div class="sc-label">Today</div><div class="sc-val" id="sToday">0</div><div class="sc-sub" id="sTodayD">—</div></div>
+      <div class="sc"><div class="sc-label">Total feedback</div><div class="sc-val orange" id="sFb">0</div><div class="sc-sub">responses</div></div>
+      <div class="sc"><div class="sc-label">Avg rating</div><div class="sc-val" id="sRating">—</div><div class="sc-sub">out of 5</div></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('waitlist',this)">📋 Waitlist</button>
+      <button class="tab" onclick="switchTab('feedback',this)">💬 Feedback</button>
+    </div>
+
+    <!-- ══ WAITLIST PANEL ══ -->
+    <div class="panel active" id="panelWaitlist">
+      <div class="add-bar" id="addBar">
+        <input type="email" id="manualMail" placeholder="email@example.com"/>
+        <button class="go" onclick="addManual()">Add</button>
+        <button class="cancel" onclick="toggleAdd()">Cancel</button>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-title">Email waitlist</div>
+        <div class="toolbar-r">
+          <input type="text" class="srch" id="wSearch" placeholder="Search emails…" oninput="renderWaitlist()"/>
+          <button class="tbtn" onclick="toggleAdd()">+ Add manually</button>
+          <button class="tbtn" onclick="exportCSV('emails')">↓ CSV</button>
+          <button class="tbtn red" onclick="clearEmails()">Clear all</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th style="width:44px">#</th><th>Email</th><th>Signed up</th><th style="width:44px"></th></tr></thead>
+        <tbody id="wBody"></tbody></table>
+        <div class="empty" id="wEmpty"><span class="empty-icon">📭</span><h3>No signups yet</h3><p>Emails from the landing page will appear here.</p></div>
+      </div>
+    </div>
+
+    <!-- ══ FEEDBACK PANEL ══ -->
+    <div class="panel" id="panelFeedback">
+      <div class="toolbar">
+        <div class="toolbar-title">Feedback responses</div>
+        <div class="toolbar-r">
+          <input type="text" class="srch" id="fSearch" placeholder="Search feedback…" oninput="renderFeedback()"/>
+          <button class="tbtn" onclick="exportCSV('feedback')">↓ CSV</button>
+          <button class="tbtn red" onclick="clearFeedback()">Clear all</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th style="width:44px">#</th>
+          <th>Rating</th>
+          <th>Category</th>
+          <th>Message</th>
+          <th>Email</th>
+          <th>Time</th>
+          <th style="width:44px"></th>
+        </tr></thead>
+        <tbody id="fBody"></tbody></table>
+        <div class="empty" id="fEmpty"><span class="empty-icon">💬</span><h3>No feedback yet</h3><p>Feedback from the landing page will appear here.</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PASS = 'nearfind2025';
+  const WL_KEY = 'nearfind_emails';
+  const FB_KEY = 'nearfind_feedback';
+
+  // ── Auth ──────────────────────────────────────────────────
+  function tryLogin(){
+    if(document.getElementById('pw').value===PASS){
+      localStorage.setItem('nf_admin','1');
+      showDash();
+    } else {
+      document.getElementById('lerr').textContent='Incorrect password.';
+      document.getElementById('pw').value='';
+    }
+  }
+  function logout(){ localStorage.removeItem('nf_admin'); location.reload(); }
+  function showDash(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('dash').style.display='block'; renderAll(); }
+  document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  if(localStorage.getItem('nf_admin')) showDash();
+
+  // ── Data ──────────────────────────────────────────────────
+  const getWL = ()=> JSON.parse(localStorage.getItem(WL_KEY)||'[]');
+  const setWL = v=> localStorage.setItem(WL_KEY,JSON.stringify(v));
+  const getFB = ()=> JSON.parse(localStorage.getItem(FB_KEY)||'[]');
+  const setFB = v=> localStorage.setItem(FB_KEY,JSON.stringify(v));
+
+  // ── Tabs ──────────────────────────────────────────────────
+  function switchTab(name, btn){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+  }
+
+  // ── Stats ─────────────────────────────────────────────────
+  function renderStats(){
+    const wl=getWL(), fb=getFB();
+    const today=new Date().toDateString();
+    const tDay=wl.filter(e=>new Date(e.time).toDateString()===today).length;
+    const ratings=fb.filter(e=>e.rating>0).map(e=>e.rating);
+    const avg=ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : '—';
+    document.getElementById('sTot').textContent=wl.length;
+    document.getElementById('sToday').textContent=tDay;
+    document.getElementById('sTodayD').textContent=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    document.getElementById('sFb').textContent=fb.length;
+    document.getElementById('sRating').textContent=avg;
+    document.getElementById('hbadge').textContent=wl.length+' signup'+(wl.length!==1?'s':'');
+  }
+
+  // ── Waitlist table ────────────────────────────────────────
+  function renderWaitlist(){
+    const q=document.getElementById('wSearch').value.toLowerCase();
+    const list=[...getWL()].reverse().filter(e=>e.email.toLowerCase().includes(q));
+    const body=document.getElementById('wBody');
+    document.getElementById('wEmpty').style.display=list.length?'none':'block';
+    body.innerHTML=list.map((e,i)=>`
+      <tr>
+        <td class="tdim">${list.length-i}</td>
+        <td class="mono">${esc(e.email)}</td>
+        <td class="tdim">${fmt(e.time)}</td>
+        <td><button class="delbtn" onclick="delEmail('${esc(e.email)}')">✕</button></td>
+      </tr>`).join('');
+  }
+
+  function delEmail(email){ setWL(getWL().filter(e=>e.email!==email)); renderAll(); toast('Removed'); }
+  function clearEmails(){ if(!confirm('Delete all '+getWL().length+' email(s)?')) return; setWL([]); renderAll(); toast('Cleared'); }
+  function toggleAdd(){ document.getElementById('addBar').classList.toggle('open'); document.getElementById('manualMail').focus(); }
+  function addManual(){
+    const v=document.getElementById('manualMail').value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ toast('Invalid email'); return; }
+    const l=getWL(); if(l.find(e=>e.email===v)){ toast('Already exists'); return; }
+    l.push({email:v,time:new Date().toISOString(),source:'Manual'});
+    setWL(l); document.getElementById('manualMail').value='';
+    document.getElementById('addBar').classList.remove('open');
+    renderAll(); toast('Added '+v);
+  }
+  document.getElementById('manualMail')?.addEventListener('keydown',e=>{ if(e.key==='Enter') addManual(); });
+
+  // ── Feedback table ────────────────────────────────────────
+  const CAT_LABELS = {
+    idea:'The idea itself', feature:'Missing feature', trust:'Trust in shops',
+    exists:'Already exists', works:'Should work differently', city:'City not listed', other:'Other','':{label:'—'}
+  };
+  const CAT_COLORS = {
+    idea:'pill-blue', feature:'pill-amber', trust:'pill-red',
+    exists:'pill-red', works:'pill-amber', city:'pill-gray', other:'pill-gray','':{class:'pill-gray'}
+  };
+  const EMOJIS = ['','😤','😕','😐','😊','🤩'];
+
+  function renderFeedback(){
+    const q=document.getElementById('fSearch').value.toLowerCase();
+    const list=[...getFB()].reverse().filter(e=>(e.message||'').toLowerCase().includes(q)||(e.email||'').toLowerCase().includes(q)||(e.category||'').toLowerCase().includes(q));
+    const body=document.getElementById('fBody');
+    document.getElementById('fEmpty').style.display=list.length?'none':'block';
+    body.innerHTML=list.map((e,i)=>{
+      const ratingHtml = e.rating ? `${EMOJIS[e.rating]} ${e.rating}/5` : '—';
+      const cat = e.category||'';
+      const cls = CAT_COLORS[cat]||'pill-gray';
+      const lbl = CAT_LABELS[cat]||cat||'—';
+      const msg = e.message ? (e.message.length>80?e.message.slice(0,80)+'…':e.message) : '<span style="color:#bbb">—</span>';
+      return `<tr>
+        <td class="tdim">${list.length-i}</td>
+        <td style="font-size:14px;white-space:nowrap">${ratingHtml}</td>
+        <td><span class="pill ${cls}">${esc(lbl)}</span></td>
+        <td style="max-width:280px;font-size:13px;line-height:1.5">${esc(e.message||'').slice(0,80)+(e.message&&e.message.length>80?'…':'')}</td>
+        <td class="mono tdim">${esc(e.email||'—')}</td>
+        <td class="tdim" style="white-space:nowrap">${fmt(e.time)}</td>
+        <td><button class="delbtn" onclick="delFeedback(${[...getFB()].reverse().indexOf(e)})">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function delFeedback(revIdx){ const l=[...getFB()]; const realIdx=l.length-1-revIdx; l.splice(realIdx,1); setFB(l); renderAll(); toast('Removed'); }
+  function clearFeedback(){ if(!confirm('Delete all '+getFB().length+' feedback entries?')) return; setFB([]); renderAll(); toast('Cleared'); }
+
+  // ── Export CSV ────────────────────────────────────────────
+  function exportCSV(type){
+    let rows, name;
+    if(type==='emails'){
+      const l=getWL(); if(!l.length){toast('No emails');return;}
+      rows=[['#','Email','Signed Up']].concat(l.map((e,i)=>[i+1,e.email,fmt(e.time)]));
+      name='nearfind-waitlist';
+    } else {
+      const l=getFB(); if(!l.length){toast('No feedback');return;}
+      rows=[['#','Rating','Category','Message','Name','Email','Time']].concat(l.map((e,i)=>[i+1,e.rating||'',e.category||'',e.message||'',e.name||'',e.email||'',fmt(e.time)]));
+      name='nearfind-feedback';
+    }
+    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download=name+'-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click(); toast('CSV downloaded');
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+  function renderAll(){ renderStats(); renderWaitlist(); renderFeedback(); }
+  function fmt(iso){ const d=new Date(iso); return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+
+  // auto-refresh every 5s
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&localStorage.getItem('nf_admin')) renderAll(); });
+  setInterval(()=>{ if(!document.hidden&&localStorage.getItem('nf_admin')) renderAll(); },5000);
+</script>
+</body>
+</html>
